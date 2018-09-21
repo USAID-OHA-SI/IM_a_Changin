@@ -42,20 +42,35 @@ targetZPCT_Lua <-df %>%
          `Mechanism ID` = "10203")
 
 
-targetnew <-bind_rows(targetSafe_CBNW,targetSEQUIP_Lua,targetZPCT_CBNW,targetZPCT_Lua)
+FY18targetnew <-bind_rows(targetSafe_CBNW,targetSEQUIP_Lua,targetZPCT_CBNW,targetZPCT_Lua)
 
 
-#halve cumulative indicators, leave snapshot or annual indicators as-is
-targetnew <-targetnew %>% 
+
+#halve indicators
+FY18targetnew <-FY18targetnew %>% 
   mutate(values = as.numeric(values/2))
 
 
-#remove snapshot or annual indicator values from ZPCT-II since they only reported through q2
-targetnew <- targetnew %>%
+#remove snapshot or annual indicator targets ZPCT-II
+FY18targetnew <- FY18targetnew %>%
   filter(!indicator %in% c("TX_CURR", "TX_RET", "TX_PVLS") | `Mechanism ID` != "10203")
 
 
-########filter df to remove EQUIP & SAFE FY18 targets from original df ###########
+#create df for Safe and EQUIP snapshot or annual indicaotrs, and set them to normal
+SAFE_EQUIPotherTarget <- FY18targetnew %>% 
+  filter(indicator %in% c("TX_CURR", "TX_RET", "TX_PVLS"))
+
+SAFE_EQUIPotherTarget <-SAFE_EQUIPotherTarget %>% 
+  mutate(values = as.numeric(values*2))
+
+
+#remove Safe and Equip snapshot or annual from the halved dataset
+FY18targetnew <-FY18targetnew %>% 
+  filter(!indicator %in% c("TX_CURR", "TX_RET", "TX_PVLS"))
+
+
+
+########filter df to remove EQUIP & SAFE FY18 targets ###########
 df_new <-df %>%
   filter(ResultsOrTargets!="Targets" | period != "10/1/2017" |
                   SNU !="Copperbelt Province" |  `Implementing Mechanism Name` !="SAFE")
@@ -70,11 +85,13 @@ df_new3 <-df_new2 %>%
            SNU !="Luapula Province" |  `Implementing Mechanism Name` !="EQUIP")
 
 
-###append new targets and filtered df
-final <-bind_rows(df_new3,targetnew)
+###append new targets and df
+final <-bind_rows(df_new3,FY18targetnew,SAFE_EQUIPotherTarget)
 
 
 #note - must change properties of values when in tableau from whole numbers to decimals in order to display properly#
 write_tsv(final, file.path(datapath,paste0("FY18.ZAMsite.IM.final", Sys.Date(),".txt")))
+         
+  
          
   
